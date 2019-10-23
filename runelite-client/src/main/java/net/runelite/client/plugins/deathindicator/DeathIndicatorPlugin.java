@@ -25,7 +25,6 @@
 package net.runelite.client.plugins.deathindicator;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.awt.image.BufferedImage;
 import java.time.Duration;
@@ -43,6 +42,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.LocalPlayerDeath;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -63,7 +63,9 @@ public class DeathIndicatorPlugin extends Plugin
 		12850, // Lumbridge
 		11828, // Falador
 		12342, // Edgeville
-		11062 // Camelot
+		11062, // Camelot
+		13150, // Prifddinas (it's possible to spawn in 2 adjacent regions)
+		12894 // Prifddinas
 	);
 
 	@Inject

@@ -35,6 +35,8 @@ import net.runelite.api.Hitsplat;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.Player;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -44,9 +46,12 @@ import net.runelite.client.Notifier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -106,7 +111,7 @@ public class IdleNotifierPluginTest
 		// Mock config
 		when(config.logoutIdle()).thenReturn(true);
 		when(config.animationIdle()).thenReturn(true);
-		when(config.combatIdle()).thenReturn(true);
+		when(config.interactionIdle()).thenReturn(true);
 		when(config.getIdleNotificationDelay()).thenReturn(0);
 		when(config.getHitpointsThreshold()).thenReturn(42);
 		when(config.getPrayerThreshold()).thenReturn(42);
@@ -155,7 +160,6 @@ public class IdleNotifierPluginTest
 		AnimationChanged animationChanged = new AnimationChanged();
 		animationChanged.setActor(player);
 		plugin.onAnimationChanged(animationChanged);
-		plugin.onInteractingChanged(new InteractingChanged(player, monster));
 		plugin.onGameTick(new GameTick());
 
 		// Logout
@@ -255,5 +259,34 @@ public class IdleNotifierPluginTest
 		plugin.onGameTick(new GameTick());
 		plugin.onGameTick(new GameTick());
 		verify(notifier, times(1)).notify(any());
+	}
+
+	@Test
+	public void testSpecRegen()
+	{
+		when(config.getSpecEnergyThreshold()).thenReturn(50);
+
+		when(client.getVar(Matchers.eq(VarPlayer.SPECIAL_ATTACK_PERCENT))).thenReturn(400); // 40%
+		plugin.onGameTick(new GameTick()); // once to set lastSpecEnergy to 400
+		verify(notifier, never()).notify(any());
+
+		when(client.getVar(Matchers.eq(VarPlayer.SPECIAL_ATTACK_PERCENT))).thenReturn(500); // 50%
+		plugin.onGameTick(new GameTick());
+		verify(notifier).notify(Matchers.eq("[" + PLAYER_NAME + "] has restored spec energy!"));
+	}
+
+	@Test
+	public void testMovementIdle()
+	{
+		when(config.movementIdle()).thenReturn(true);
+
+		when(player.getWorldLocation()).thenReturn(new WorldPoint(0, 0, 0));
+		plugin.onGameTick(new GameTick());
+		when(player.getWorldLocation()).thenReturn(new WorldPoint(1, 0, 0));
+		plugin.onGameTick(new GameTick());
+		// No movement here
+		plugin.onGameTick(new GameTick());
+
+		verify(notifier).notify(eq("[" + PLAYER_NAME + "] has stopped moving!"));
 	}
 }

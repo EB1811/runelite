@@ -24,7 +24,6 @@
  */
 package net.runelite.client.plugins.defaultworld;
 
-import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.io.IOException;
 import javax.inject.Inject;
@@ -32,8 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
-import net.runelite.api.events.SessionOpen;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.SessionOpen;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.WorldUtil;
@@ -43,7 +43,8 @@ import net.runelite.http.api.worlds.WorldResult;
 
 @PluginDescriptor(
 	name = "Default World",
-	description = "Enable a default world to be selected when launching the client"
+	description = "Enable a default world to be selected when launching the client",
+	tags = {"home"}
 )
 @Slf4j
 public class DefaultWorldPlugin extends Plugin
@@ -54,7 +55,9 @@ public class DefaultWorldPlugin extends Plugin
 	@Inject
 	private DefaultWorldConfig config;
 
-	private final WorldClient worldClient = new WorldClient();
+	@Inject
+	private WorldClient worldClient;
+
 	private int worldCache;
 	private boolean worldChangeRequired;
 
@@ -86,7 +89,7 @@ public class DefaultWorldPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onGameStateChange(GameStateChanged event)
+	public void onGameStateChanged(GameStateChanged event)
 	{
 		applyWorld();
 	}
@@ -111,6 +114,13 @@ public class DefaultWorldPlugin extends Plugin
 		try
 		{
 			final WorldResult worldResult = worldClient.lookupWorlds();
+
+			if (worldResult == null)
+			{
+				log.warn("Failed to lookup worlds.");
+				return;
+			}
+
 			final World world = worldResult.findWorld(correctedWorld);
 
 			if (world != null)

@@ -27,8 +27,6 @@ package net.runelite.client.plugins;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.Graphs;
@@ -59,17 +57,20 @@ import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.events.SessionClose;
-import net.runelite.api.events.SessionOpen;
+import net.runelite.client.events.SessionClose;
+import net.runelite.client.events.SessionOpen;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneLiteConfig;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.PluginChanged;
 import net.runelite.client.task.Schedule;
 import net.runelite.client.task.ScheduledMethod;
 import net.runelite.client.task.Scheduler;
+import net.runelite.client.ui.SplashScreen;
 import net.runelite.client.util.GameEventManager;
 
 @Singleton
@@ -140,7 +141,7 @@ public class PluginManager
 				}
 				catch (PluginInstantiationException e)
 				{
-					log.warn("Error during starting/stopping plugin {}. {}", plugin.getClass().getSimpleName(), e);
+					log.warn("Error during starting/stopping plugin {}", plugin.getClass().getSimpleName(), e);
 				}
 			}));
 	}
@@ -200,6 +201,7 @@ public class PluginManager
 	public void startCorePlugins()
 	{
 		List<Plugin> scannedPlugins = new ArrayList<>(plugins);
+		int loaded = 0;
 		for (Plugin plugin : scannedPlugins)
 		{
 			try
@@ -208,14 +210,18 @@ public class PluginManager
 			}
 			catch (PluginInstantiationException ex)
 			{
-				log.warn("Unable to start plugin {}. {}", plugin.getClass().getSimpleName(), ex);
+				log.warn("Unable to start plugin {}", plugin.getClass().getSimpleName(), ex);
 				plugins.remove(plugin);
 			}
+
+			loaded++;
+			SplashScreen.stage(.80, 1, null, "Starting plugins", loaded, scannedPlugins.size(), false);
 		}
 	}
 
 	List<Plugin> scanAndInstantiate(ClassLoader classLoader, String packageName) throws IOException
 	{
+		SplashScreen.stage(.59, null, "Loading Plugins");
 		MutableGraph<Class<? extends Plugin>> graph = GraphBuilder
 			.directed()
 			.build();
@@ -280,20 +286,22 @@ public class PluginManager
 		List<Class<? extends Plugin>> sortedPlugins = topologicalSort(graph);
 		sortedPlugins = Lists.reverse(sortedPlugins);
 
+		int loaded = 0;
 		for (Class<? extends Plugin> pluginClazz : sortedPlugins)
 		{
 			Plugin plugin;
 			try
 			{
 				plugin = instantiate(scannedPlugins, (Class<Plugin>) pluginClazz);
+				scannedPlugins.add(plugin);
 			}
 			catch (PluginInstantiationException ex)
 			{
 				log.warn("Error instantiating plugin!", ex);
-				continue;
 			}
 
-			scannedPlugins.add(plugin);
+			loaded++;
+			SplashScreen.stage(.60, .70, null, "Loading Plugins", loaded, sortedPlugins.size(), false);
 		}
 
 		return scannedPlugins;
@@ -337,7 +345,7 @@ public class PluginManager
 			schedule(plugin);
 			eventBus.post(new PluginChanged(plugin, true));
 		}
-		catch (InterruptedException | InvocationTargetException ex)
+		catch (InterruptedException | InvocationTargetException | IllegalArgumentException ex)
 		{
 			throw new PluginInstantiationException(ex);
 		}

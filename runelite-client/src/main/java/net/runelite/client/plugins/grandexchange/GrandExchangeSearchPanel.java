@@ -41,10 +41,9 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ItemComposition;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.game.AsyncBufferedImage;
+import net.runelite.client.util.AsyncBufferedImage;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.components.IconTextField;
@@ -55,7 +54,6 @@ import net.runelite.http.api.item.ItemPrice;
  * This panel holds the search section of the Grand Exchange Plugin.
  * It should display a search bar and either item results or a error panel.
  */
-@Slf4j
 class GrandExchangeSearchPanel extends JPanel
 {
 	private static final String ERROR_PANEL = "ERROR_PANEL";
@@ -102,8 +100,8 @@ class GrandExchangeSearchPanel extends JPanel
 
 		searchBar.setIcon(IconTextField.Icon.SEARCH);
 		searchBar.setPreferredSize(new Dimension(100, 30));
-		searchBar.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
-		searchBar.setHoverBackgroundColor(ColorScheme.MEDIUM_GRAY_COLOR.brighter());
+		searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
 		searchBar.addActionListener(e -> executor.execute(() -> priceLookup(false)));
 
 		searchItemsPanel.setLayout(new GridBagLayout());
@@ -164,7 +162,7 @@ class GrandExchangeSearchPanel extends JPanel
 
 		// Input is not empty, add searching label
 		searchItemsPanel.removeAll();
-		searchBar.setBackground(ColorScheme.MEDIUM_GRAY_COLOR);
+		searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		searchBar.setEditable(false);
 		searchBar.setIcon(IconTextField.Icon.LOADING);
 

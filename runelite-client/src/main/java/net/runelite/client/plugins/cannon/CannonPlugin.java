@@ -24,7 +24,6 @@
  */
 package net.runelite.client.plugins.cannon;
 
-import com.google.common.eventbus.Subscribe;
 import com.google.inject.Provides;
 import java.awt.Color;
 import java.time.temporal.ChronoUnit;
@@ -56,6 +55,7 @@ import net.runelite.api.events.ProjectileMoved;
 import net.runelite.client.Notifier;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -283,7 +283,7 @@ public class CannonPlugin extends Plugin
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
 	{
-		if (event.getType() != ChatMessageType.FILTERED && event.getType() != ChatMessageType.SERVER)
+		if (event.getType() != ChatMessageType.SPAM && event.getType() != ChatMessageType.GAMEMESSAGE)
 		{
 			return;
 		}
@@ -295,7 +295,8 @@ public class CannonPlugin extends Plugin
 			cballsLeft = 0;
 		}
 
-		if (event.getMessage().contains("You pick up the cannon"))
+		if (event.getMessage().contains("You pick up the cannon")
+			|| event.getMessage().contains("Your cannon has decayed. Speak to Nulodion to get a new one!"))
 		{
 			cannonPlaced = false;
 			cballsLeft = 0;

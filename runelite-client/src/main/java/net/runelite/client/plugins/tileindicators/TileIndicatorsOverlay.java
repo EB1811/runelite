@@ -40,7 +40,6 @@ import net.runelite.client.ui.overlay.OverlayUtil;
 
 public class TileIndicatorsOverlay extends Overlay
 {
-	private static final Color EMPTY = new Color(0, 0, 0, 0);
 	private final Client client;
 	private final TileIndicatorsConfig config;
 
@@ -51,7 +50,7 @@ public class TileIndicatorsOverlay extends Overlay
 		this.config = config;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
-		setPriority(OverlayPriority.LOW);
+		setPriority(OverlayPriority.MED);
 	}
 
 	@Override
@@ -59,17 +58,10 @@ public class TileIndicatorsOverlay extends Overlay
 	{
 		if (config.highlightHoveredTile())
 		{
-			// Update selected scene tile
-			if (!client.isMenuOpen())
-			{
-				client.setCheckClick(true);
-				client.setMouseCanvasHoverPosition(client.getMouseCanvasPosition());
-			}
-
 			// If we have tile "selected" render it
 			if (client.getSelectedSceneTile() != null)
 			{
-				renderTile(graphics, client.getSelectedSceneTile().getLocalLocation(), EMPTY);
+				renderTile(graphics, client.getSelectedSceneTile().getLocalLocation(), config.highlightHoveredColor());
 			}
 		}
 

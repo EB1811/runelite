@@ -111,15 +111,14 @@ public interface ScreenshotConfig extends Config
 
 	@ConfigItem(
 		keyName = "uploadScreenshot",
-		name = "Upload To Imgur",
-		description = "Configures whether or not screenshots are uploaded to Imgur and copied into your clipboard",
+		name = "Upload",
+		description = "Configures whether or not screenshots are uploaded to Imgur, or placed on your clipboard",
 		position = 7
 	)
-	default boolean uploadScreenshot()
+	default UploadStyle uploadScreenshot()
 	{
-		return false;
+		return UploadStyle.NEITHER;
 	}
-
 
 	@ConfigItem(
 		keyName = "kills",
@@ -155,10 +154,43 @@ public interface ScreenshotConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "duels",
+		name = "Screenshot Duels",
+		description = "Configures whether or not screenshots are automatically taken of the duel end screen.",
+		position = 11
+	)
+	default boolean screenshotDuels()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "valuableDrop",
+		name = "Screenshot Valuable drops",
+		description = "Configures whether or not screenshots are automatically taken when you receive a valuable drop.",
+		position = 12
+	)
+	default boolean screenshotValuableDrop()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "untradeableDrop",
+		name = "Screenshot Untradeable drops",
+		description = "Configures whether or not screenshots are automatically taken when you receive an untradeable drop.",
+		position = 13
+	)
+	default boolean screenshotUntradeableDrop()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "hotkey",
 		name = "Screenshot hotkey",
 		description = "When you press this key a screenshot will be taken",
-		position = 11
+		position = 14
 	)
 	default Keybind hotkey()
 	{

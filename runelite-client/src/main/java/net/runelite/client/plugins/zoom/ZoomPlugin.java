@@ -25,15 +25,18 @@
  */
 package net.runelite.client.plugins.zoom;
 
-import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import net.runelite.api.Client;
+import net.runelite.api.ScriptID;
 import net.runelite.api.events.ConfigChanged;
 import net.runelite.api.events.FocusChanged;
 import net.runelite.api.events.ScriptCallbackEvent;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
@@ -47,10 +50,15 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class ZoomPlugin extends Plugin implements KeyListener
 {
+	private static final int DEFAULT_ZOOM_INCREMENT = 25;
+
 	private boolean controlDown;
 	
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ZoomConfig zoomConfig;
@@ -65,7 +73,7 @@ public class ZoomPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
-	public void onScriptEvent(ScriptCallbackEvent event)
+	public void onScriptCallbackEvent(ScriptCallbackEvent event)
 	{
 		if (client.getIndexScripts().isOverlayOutdated())
 		{
@@ -77,14 +85,28 @@ public class ZoomPlugin extends Plugin implements KeyListener
 		int[] intStack = client.getIntStack();
 		int intStackSize = client.getIntStackSize();
 
-		if ("scrollWheelZoom".equals(event.getEventName()) && zoomConfig.requireControlDown() && !controlDown)
+		if (!controlDown && "scrollWheelZoom".equals(event.getEventName()) && zoomConfig.controlFunction() == ControlFunction.CONTROL_TO_ZOOM)
 		{
 			intStack[intStackSize - 1] = 1;
 		}
 
 		if ("innerZoomLimit".equals(event.getEventName()) && zoomConfig.innerLimit())
 		{
-			intStack[intStackSize - 1] = 1200;
+			intStack[intStackSize - 1] = ZoomConfig.INNER_ZOOM_LIMIT;
+			return;
+		}
+
+		if ("outerZoomLimit".equals(event.getEventName()))
+		{
+			int outerLimit = Ints.constrainToRange(zoomConfig.outerLimit(), ZoomConfig.OUTER_LIMIT_MIN, ZoomConfig.OUTER_LIMIT_MAX);
+			int outerZoomLimit = 128 - outerLimit;
+			intStack[intStackSize - 1] = outerZoomLimit;
+			return;
+		}
+
+		if ("scrollWheelZoomIncrement".equals(event.getEventName()) && zoomConfig.zoomIncrement() != DEFAULT_ZOOM_INCREMENT)
+		{
+			intStack[intStackSize - 1] = zoomConfig.zoomIncrement();
 			return;
 		}
 
@@ -122,7 +144,7 @@ public class ZoomPlugin extends Plugin implements KeyListener
 			controlDown = false;
 		}
 	}
-	
+
 	@Override
 	protected void startUp()
 	{
@@ -164,6 +186,12 @@ public class ZoomPlugin extends Plugin implements KeyListener
 		if (e.getKeyCode() == KeyEvent.VK_CONTROL)
 		{
 			controlDown = false;
+
+			if (zoomConfig.controlFunction() == ControlFunction.CONTROL_TO_RESET)
+			{
+				final int zoomValue = Ints.constrainToRange(zoomConfig.ctrlZoomValue(), ZoomConfig.OUTER_LIMIT_MIN, ZoomConfig.INNER_ZOOM_LIMIT);
+				clientThread.invokeLater(() -> client.runScript(ScriptID.CAMERA_DO_ZOOM, zoomValue, zoomValue));
+			}
 		}
 	}
 }
